@@ -35,6 +35,9 @@ pub trait ProcessLookup: Send + Sync {
     fn refresh(&self) -> Result<()> {
         Ok(()) // Default no-op
     }
+
+    /// Get the detection method name for display purposes
+    fn get_detection_method(&self) -> &str;
 }
 
 /// No-op process lookup for when PKTAP is providing process metadata
@@ -49,6 +52,10 @@ impl ProcessLookup for NoOpProcessLookup {
 
     fn refresh(&self) -> Result<()> {
         Ok(()) // Nothing to refresh
+    }
+
+    fn get_detection_method(&self) -> &str {
+        "pktap"
     }
 }
 
@@ -87,11 +94,13 @@ pub fn create_process_lookup_with_pktap_status(
             }
         }
         // Use basic procfs lookup (either as fallback or when eBPF is not enabled)
+        log::info!("Using Linux process lookup (procfs)");
         Ok(Box::new(LinuxProcessLookup::new()?))
     }
 
     #[cfg(target_os = "windows")]
     {
+        log::info!("Using Windows process lookup (IP Helper API)");
         Ok(Box::new(WindowsProcessLookup::new()?))
     }
 
